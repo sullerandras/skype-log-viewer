@@ -1,0 +1,12 @@
+{
+    "name": "skype_log_viewer"
+  , "description": "Skype Log Viewer"
+  , "version": "0.0.1"
+  , "private": true
+  , "dependencies": {
+      "express": ""
+    , "connect-gzip": ""
+    , "ansi-color": ""
+    , "sqlite3": ""
+  }
+}

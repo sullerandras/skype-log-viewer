@@ -1,0 +1,123 @@
+<!doctype html>
+<html xmlns:ng="http://angularjs.org" ng:app="MyApp">
+<head>
+	<meta charset="utf-8">
+	<title>Skype log viewer</title>
+	<script src="http://docs-next.angularjs.org/angular-0.10.6.min.js"></script>
+	<style>
+		table { border-collapse: collapse;}
+		table.conversations th, table.conversations td, table.messages th, table.messages td { border: 1px solid black; padding: 3px;}
+		table.main > tbody > tr > td {vertical-align: top;}
+	</style>
+	<script>
+		var app = angular.module('MyApp', [])
+		AppController.$inject = ['$http', '$resource']
+		function AppController(http, resource){
+			var scope = this
+			scope.conversations_limit = 10
+			scope.Conversations = resource('/conversations', {}, {
+				filter: {method: 'POST', isArray: true}
+			})
+			scope.$watch('conversations_filter', function(){
+				scope.conversations_refresh()
+			})
+			scope.$watch('conversations_limit', function(sc, newVal, oldVal){
+				if (newVal !== oldVal) scope.conversations_refresh()
+			})
+
+			scope.messages_limit = 10
+			scope.Messages = resource('/messages', {}, {
+				filter: {method: 'POST', isArray: true}
+			})
+			scope.$watch('messages_filter', function(){
+				scope.messages_refresh()
+			})
+			scope.$watch('messages_limit', function(sc, newVal, oldVal){
+				if (newVal !== oldVal) scope.messages_refresh()
+			})
+		}
+		AppController.prototype = {
+			log: function(data){
+				console && console.log && console.log(data)
+				return data
+			},
+			conversations_refresh: function(){
+				var scope = this
+				var params = {
+					filter: scope.conversations_filter,
+					limit: scope.conversations_limit,
+				}
+				scope.conversations = scope.Conversations.filter(params)
+			},
+			messages_refresh: function(){
+				var scope = this
+				var params = {
+					filter: scope.messages_filter,
+					limit: scope.messages_limit,
+				}
+				scope.messages = scope.Messages.filter(params)
+			},
+		}
+	</script>
+</head>
+<body ng:controller="AppController">
+	<table class="main">
+		<tr>
+			<td>
+				<h2>Conversations</h2>
+				Filter: <input ng:model="conversations_filter"/>
+				<select ng:model="conversations_limit">
+					<option value="10">10</option>
+					<option value="20">20</option>
+					<option value="50">50</option>
+					<option value="100">100</option>
+					<option value="99999">All</option>
+				</select>
+				<br>
+				<table class="conversations">
+					<tr>
+						<th>#</th>
+						<th>id</th>
+						<th>name</th>
+					</tr>
+					<tr ng:repeat="row in conversations">
+						<td>{{$index + 1}}</td>
+						<td>{{row.id}}</td>
+						<td>{{row.displayname}}</td>
+					</tr>
+				</table>
+			</td>
+			<td>
+				<h2>Messages</h2>
+				Filter: <input ng:model="messages_filter"/>
+				<select ng:model="messages_limit">
+					<option value="10">10</option>
+					<option value="20">20</option>
+					<option value="50">50</option>
+					<option value="100">100</option>
+					<option value="99999">All</option>
+				</select>
+				<br>
+				<table class="messages">
+					<tr>
+						<th>#</th>
+						<th>id</th>
+						<th>convo_id</th>
+						<th>sender name</th>
+						<th>timestamp</th>
+						<th>text</th>
+					</tr>
+					<tr ng:repeat="row in messages">
+						<td>{{$index + 1}}</td>
+						<td>{{row.id}}</td>
+						<td>{{row.convo_id}}</td>
+						<td>{{row.from_dispname}}</td>
+						<td><nobr>{{row.timestamp * 1000 | date:'medium'}}</nobr></td>
+						<td>{{row.body_xml | html}}</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>
