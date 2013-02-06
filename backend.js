@@ -92,5 +92,6 @@ app.post('/conversations', function(req, res){
 	})
 })
 
-app.listen(8001)
-console.log("\n\n\n\nExpress server listening on port %d in %s mode\n", app.address().port, app.settings.env)
+port = process.env.PORT || 8001
+app.listen(port)
+console.log("\n\n\n\nExpress server listening on port %d in %s mode\n", port, app.settings.env)
