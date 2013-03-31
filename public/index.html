@@ -8,7 +8,7 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.5/angular-sanitize.min.js"></script>
 	<style>
 		table { border-collapse: collapse;}
-		table.conversations th, table.conversations td, table.messages th, table.messages td { border: 1px solid black; padding- 3px;}
+		table.data tbody > * { border: 1px solid black; padding- 3px;}
 		table.main > tbody > tr > td {vertical-align: top;}
 	</style>
 	<script>
@@ -36,6 +36,15 @@
 			scope.$watch('messages_limit', function(sc, newVal, oldVal){
 				if (newVal !== oldVal) scope.messages_refresh()
 			})
+
+			scope.recent_conversations_days = 10
+			scope.RecentConversations = resource('/recently_used_conversations', {}, {
+				filter: {method: 'POST', isArray: true}
+			})
+			scope.$watch('recent_conversations_days', function(sc, newVal, oldVal){
+				if (newVal !== oldVal) scope.recent_conversations_refresh()
+			})
+
 			scope.log = function(data){
 				console && console.log && console.log(data)
 				return data
@@ -56,6 +65,13 @@
 				}
 				scope.messages = scope.Messages.filter(params)
 			}
+			scope.recent_conversations_refresh = function(){
+				var scope = this
+				var params = {
+					days: scope.recent_conversations_days,
+				}
+				scope.recent_conversations = scope.RecentConversations.filter(params)
+			}
 		}
 	</script>
 </head>
@@ -73,7 +89,7 @@
 					<option value="99999">All</option>
 				</select>
 				<br>
-				<table class="conversations">
+				<table class="data conversations">
 					<tr>
 						<th>#</th>
 						<th>id</th>
@@ -97,11 +113,11 @@
 					<option value="99999">All</option>
 				</select>
 				<br>
-				<table class="messages">
+				<table class="data messages">
 					<tr>
 						<th>#</th>
 						<th>id</th>
-						<th>convo_id</th>
+						<th>convo</th>
 						<th>sender name</th>
 						<th>timestamp</th>
 						<th>text</th>
@@ -109,10 +125,36 @@
 					<tr ng-repeat="row in messages">
 						<td>{{$index + 1}}</td>
 						<td>{{row.id}}</td>
-						<td>{{row.convo_id}}</td>
+						<td>{{row.convo_displayname}} ({{row.convo_id}})</td>
 						<td>{{row.from_dispname}}</td>
 						<td><nobr>{{row.timestamp * 1000 | date:'medium'}}</nobr></td>
 						<td ng-bind-html="row.body_xml"></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<h2>Recent conversations</h2>
+				in the past
+				<select ng-model="recent_conversations_days">
+					<option value="1">1</option>
+					<option value="10">10</option>
+					<option value="30">30</option>
+					<option value="60">60</option>
+					<option value="99999">All</option>
+				</select> days:
+				<br>
+				<table class="data recent_conversations">
+					<tr>
+						<th>#</th>
+						<th>convo</th>
+						<th># messages</th>
+					</tr>
+					<tr ng-repeat="row in recent_conversations">
+						<td>{{$index + 1}}</td>
+						<td>{{row.displayname}} ({{row.convo_id}})</td>
+						<td>{{row.count}}</td>
 					</tr>
 				</table>
 			</td>

@@ -5,7 +5,7 @@ var fs = require('fs')
 var ansi_color = require('ansi-color').set
 
 var app = express.createServer()
-var frontend_dir = '.'
+var frontend_dir = 'public'
 
 function openDB(){
 	return new sqlite3.Database('main.db', sqlite3.OPEN_READONLY)
@@ -13,7 +13,9 @@ function openDB(){
 //backend filter functions
 function filterMessages(filter, limit, callback){
 	var db = openDB()
-	db.all('select * from Messages where body_xml like ? order by id desc limit ?',
+	db.all(
+		'select *, (select displayname from Conversations where id = convo_id) convo_displayname '+
+		'from Messages where body_xml like ? order by id desc limit ?',
 		['%'+filter+'%', parseInt(limit)], callback)
 }
 
@@ -23,19 +25,39 @@ function filterConversations(filter, limit, callback){
 		['%'+filter+'%', parseInt(limit)], callback)
 }
 
+function recentlyUsedConversations(days, callback){
+	var db = openDB()
+	db.all(
+		"select convo_id, count(convo_id) count, (select displayname from Conversations where id = convo_id) displayname "+
+		"from Messages "+
+		"where timestamp >= strftime('%s','now') - 86400 * ? "+
+		"group by convo_id",
+		[parseInt(days)], callback)
+}
+
 //some tests for filtering functions
 filterMessages('hi', 10, function(err, rows){
+	console.log('\nLast 10 Messages containing "hi":')
 	for (var i in rows){
 		var row = rows[i]
-		console.log(row.id, row.convo_id, row.from_dispname,
+		console.log(row.id, row.convo_id, row.from_dispname, row.convo_displayname,
 			new Date(row.timestamp*1000), row.body_xml)
 	}
 })
 
-filterConversations('he', 10, function(err, rows){
+filterConversations('jo', 10, function(err, rows){
+	console.log('\nLast 10 Conversations where name containing "jo":')
 	for (var i in rows){
 		var row = rows[i]
 		console.log(row.id, row.displayname)
+	}
+})
+
+recentlyUsedConversations(10, function(err, rows){
+	console.log('\nConversations with messages in the past 10 days:')
+	for (var i in rows){
+		var row = rows[i]
+		console.log(row.convo_id, row.count, row.displayname)
 	}
 })
 
@@ -88,6 +110,13 @@ app.get('/conversations/:filter?/:limit?', function(req, res){
 app.post('/conversations', function(req, res){
 	var params = req.body || {}
 	filterConversations(params.filter || '', params.limit || 10, function(err, rows){
+		res.send(rows)
+	})
+})
+app.post('/recently_used_conversations', function(req, res){
+	var params = req.body || {}
+	console.log('recently_used_conversations, days:', params.days)
+	recentlyUsedConversations(params.days || 10, function(err, rows){
 		res.send(rows)
 	})
 })
