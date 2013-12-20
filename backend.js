@@ -1,10 +1,10 @@
 var sqlite3 = require('sqlite3')
-var	express = require('express')
+var express = require('express')
 var gzip = require('connect-gzip')
 var fs = require('fs')
 var ansi_color = require('ansi-color').set
 
-var app = express.createServer()
+var app = express()
 var frontend_dir = 'public'
 
 function openDB(){
